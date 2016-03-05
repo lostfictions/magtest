@@ -1,0 +1,98 @@
+<!doctype html>
+<html class="no-js" lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>mag testin</title>
+    <script src="https://code.createjs.com/createjs-2015.11.26.min.js"></script>
+    <script src="https://cdn.rawgit.com/josephg/noisejs/master/perlin.js"></script>
+  </head>
+  <body>
+    <script>
+      /* eslint no-var:0 vars-on-top:0 */
+      /* eslint-env node:false es6:false */
+      /* global createjs noise */
+
+      var stage, arm, target, queue;
+      var mag;
+
+      var iconFilesToPassages = {
+        'Mag-LETTERS.png': 'Mag-LETTERS',
+        'Mag-AROUND.png': 'Mag-AROUND TOWN',
+        'Mag-OperationPt1.png': 'Mag-OperationPt1',
+        'Mag-PLACES.png': 'Mag-PLACES OF NOTE',
+        'Mag-REVIEWS.png': 'Mag-REVIEWS',
+        'Mag-TIPS.png': 'Mag-TIPS & TRICKS',
+        'Mag-OperationPt0.png': 'Mag-OperationPt0',
+        'Mag-STYLE.png': 'Mag-STYLE',
+        'Mag-OperationPtS.png': 'Mag-OperationPtS',
+        'Mag-PROFILE.png': 'Mag-PROFILE'
+      };
+
+      var filesToLoad = Object
+        .keys(iconFilesToPassages)
+        .concat('gardens.jpg');
+
+      function loadStuff() { //eslint-disable-line no-unused-vars
+        queue = new createjs.LoadQueue();
+        queue.installPlugin(createjs.Sound);
+        queue.on("complete", init, this);
+        queue.loadManifest(filesToLoad);
+      }
+
+      function init() { //eslint-disable-line no-unused-vars
+        stage = new createjs.Stage("magcanvas");
+
+        mag = new createjs.Bitmap(queue.getResult('gardens.jpg'));
+        stage.addChild(mag);
+        mag.x = 100;
+        mag.y = 100;
+        mag.scale *= 0.1;
+        mag.rotation = -12;
+        mag.regX = mag.image.width / 2 | 0;
+        mag.regY = mag.image.height / 2 | 0;
+        mag.scaleX = mag.scaleY = mag.scale = 0.2;
+        mag.cursor = "pointer";
+
+        target = stage.addChild(new createjs.Shape());
+        target.graphics.beginFill("red").drawCircle(0,0,45)
+          .beginFill("white").drawCircle(0,0,30)
+          .beginFill("red").drawCircle(0,0,15);
+        target.x = 100;
+        target.y = 180;
+
+        arm = stage.addChild(new createjs.Shape());
+        arm.graphics.beginFill("black").drawRect(-2,-2,100,4)
+          .beginFill("blue").drawCircle(100,0,8);
+        arm.x = 180;
+        arm.y = 100;
+
+        createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
+        createjs.Ticker.setFPS(60);
+        createjs.Ticker.on("tick", tick);
+      }
+
+      function tick(event) {
+        var pt;
+
+        arm.rotation += event.delta/1000*50;
+        mag.x = 100 + 20 * noise.simplex2(100, createjs.Ticker.getTime() / 10000);
+        mag.y = 180 + 20 * noise.simplex2(createjs.Ticker.getTime() / 10000, 100);
+
+        target.alpha = 0.2;
+        pt = arm.localToLocal(100,0,target);
+        if (target.hitTest(pt.x, pt.y)) {
+          target.alpha = 1;
+        }
+
+        stage.update(event);
+      }
+    </script>
+    <img
+      src="data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA="
+      style="display: none;"
+      onload="loadStuff();">
+      <!-- onload="init();"> -->
+    <canvas id="magcanvas" width=300 height=300></canvas>
+  </body>
+</html>
