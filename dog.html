@@ -9,12 +9,29 @@
   </head>
   <body>
     <script>
+      //Dummy engine functions
+      window.harlowe = {
+        goToPassage: function(passage) {
+          console.log('going to ' + passage);
+        }
+      };
+
       /* eslint no-var:0 vars-on-top:0 */
       /* eslint-env node:false es6:false */
       /* global createjs noise */
 
-      var stage, arm, target, queue;
+      function extractItem(arr) {
+        var i = Math.floor(Math.random()*arr.length);
+        return arr.splice(i, 1)[0];
+      }
+
+
+      var stage, queue;
       var mag;
+      var icons = [];
+      var beziers = [];
+
+      var srcPrefix = 'http://seerscatalogue.github.io/seers/images/magIcons/';
 
       var iconFilesToPassages = {
         'Mag-LETTERS.png': 'Mag-LETTERS',
@@ -31,41 +48,83 @@
 
       var filesToLoad = Object
         .keys(iconFilesToPassages)
+        .map(function(src) { return srcPrefix + src; })
         .concat('gardens.jpg');
 
-      function loadStuff() { //eslint-disable-line no-unused-vars
+      function init() { //eslint-disable-line no-unused-vars
         queue = new createjs.LoadQueue();
         queue.installPlugin(createjs.Sound);
-        queue.on("complete", init, this);
+        queue.on("complete", start, this);
         queue.loadManifest(filesToLoad);
       }
 
-      function init() { //eslint-disable-line no-unused-vars
+      function start() { //eslint-disable-line no-unused-vars
         stage = new createjs.Stage("magcanvas");
+        stage.enableMouseOver(10);
+        createjs.Touch.enable(stage);
+
+        //Draw debug rect
+        var graphics = new createjs.Graphics()
+          .beginFill("rgba(255,0,0,0.5)")
+          .drawRect(0, 0, stage.canvas.width, stage.canvas.height);
+        var shape = new createjs.Shape(graphics);
+        stage.addChild(shape);
 
         mag = new createjs.Bitmap(queue.getResult('gardens.jpg'));
         stage.addChild(mag);
-        mag.x = 100;
-        mag.y = 100;
+        mag.initX = mag.x = 150;
+        mag.initY = mag.y = 420;
         mag.scale *= 0.1;
-        mag.rotation = -12;
+        mag.rotation = -10;
         mag.regX = mag.image.width / 2 | 0;
         mag.regY = mag.image.height / 2 | 0;
-        mag.scaleX = mag.scaleY = mag.scale = 0.2;
+        mag.scaleX = mag.scaleY = mag.scale = 0.3;
         mag.cursor = "pointer";
 
-        target = stage.addChild(new createjs.Shape());
-        target.graphics.beginFill("red").drawCircle(0,0,45)
-          .beginFill("white").drawCircle(0,0,30)
-          .beginFill("red").drawCircle(0,0,15);
-        target.x = 100;
-        target.y = 180;
+        // mag.on("mousedown", function (evt) {
+        //   console.log('doing a thing!' + evt);
+        // });
 
-        arm = stage.addChild(new createjs.Shape());
-        arm.graphics.beginFill("black").drawRect(-2,-2,100,4)
-          .beginFill("blue").drawCircle(100,0,8);
-        arm.x = 180;
-        arm.y = 100;
+        var srcs = Object.keys(iconFilesToPassages);
+        for(var i=0; i<3; i++) {
+          (function(){
+            var src = extractItem(srcs);
+            var icon = new createjs.Bitmap(queue.getResult(srcPrefix + src));
+            stage.addChild(icon);
+            icon.initX = icon.x = i < 2 ? 80 + 130 * i : 150;
+            icon.initY = icon.y = i < 2 ? 80 : 200;
+            icon.scale *= 0.2;
+            icon.rotation = -12;
+            icon.regX = icon.image.width / 2 | 0;
+            icon.regY = icon.image.height / 2 | 0;
+            icon.scaleX = icon.scaleY = icon.scale = 0.3;
+            icon.cursor = "pointer";
+
+            icon.on("mousedown", function() {
+              window.harlowe.goToPassage(iconFilesToPassages[src]);
+            });
+
+            icons.push(icon);
+
+            var g = new createjs.Graphics();
+            var bez = new createjs.Shape(g);
+            stage.addChildAt(bez, 1);
+            beziers.push(g);
+          })();
+        }
+
+        // target = stage.addChild(new createjs.Shape());
+        // target.graphics.beginFill("red").drawCircle(0,0,45)
+        //   .beginFill("white").drawCircle(0,0,30)
+        //   .beginFill("red").drawCircle(0,0,15);
+        // target.x = 100;
+        // target.y = 180;
+        //
+        // arm = stage.addChild(new createjs.Shape());
+        // arm.graphics.beginFill("black").drawRect(-2,-2,100,4)
+        //   .beginFill("blue").drawCircle(100,0,8);
+        // arm.x = 180;
+        // arm.y = 100;
 
         createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
         createjs.Ticker.setFPS(60);
@@ -73,17 +132,36 @@
       }
 
       function tick(event) {
-        var pt;
+        var time = createjs.Ticker.getTime();
+        // var pt;
 
-        arm.rotation += event.delta/1000*50;
-        mag.x = 100 + 20 * noise.simplex2(100, createjs.Ticker.getTime() / 10000);
-        mag.y = 180 + 20 * noise.simplex2(createjs.Ticker.getTime() / 10000, 100);
+        // arm.rotation += event.delta/1000*50;
+        mag.x = mag.initX + 20 * noise.simplex2(100, time / 18000);
+        mag.y = mag.initY + 20 * noise.simplex2(time / 20000, 100);
+        mag.rotation = -10 + Math.sin(time / 2900) * 4;
+        for(var i=0; i<icons.length; i++) {
+          var ic = icons[i];
+          ic.x = ic.initX + 20 * noise.simplex2(i * 1000, time / 17000);
+          ic.y = ic.initY + 20 * noise.simplex2(time / 20000, i * 1000);
+          ic.rotation = Math.sin(time / 2900 + i * 1723) * 6;
 
-        target.alpha = 0.2;
-        pt = arm.localToLocal(100,0,target);
-        if (target.hitTest(pt.x, pt.y)) {
-          target.alpha = 1;
+          var g = beziers[i];
+          g.clear();
+          g.setStrokeStyle(6);
+          g.beginStroke("#000000");
+          g.moveTo(ic.x, ic.y);
+          g.bezierCurveTo(
+            ic.x, ic.y,
+            (ic.x + mag.x) / 2 + Math.sin(time / 2000 + i * 100) * 30, (ic.y + mag.y) / 2,
+            mag.x + 30 * (i - 1), mag.y
+          );
         }
+
+        // target.alpha = 0.2;
+        // pt = arm.localToLocal(100,0,target);
+        // if (target.hitTest(pt.x, pt.y)) {
+        //   target.alpha = 1;
+        // }
 
         stage.update(event);
       }
@@ -91,8 +169,7 @@
     <img
       src="data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA="
       style="display: none;"
-      onload="loadStuff();">
-      <!-- onload="init();"> -->
-    <canvas id="magcanvas" width=300 height=300></canvas>
+      onload="init();">
+    <canvas id="magcanvas" width=300 height=600></canvas>
   </body>
 </html>
