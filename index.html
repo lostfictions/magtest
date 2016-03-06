@@ -31,7 +31,9 @@
       var icons = [];
       var beziers = [];
 
-      var srcPrefix = 'http://seerscatalogue.github.io/seers/images/magIcons/';
+      var rootSrc = 'http://seerscatalogue.github.io/seers/images/';
+
+      var iconSrcPrefix = rootSrc + 'magIcons/';
 
       var iconFilesToPassages = {
         'Mag-LETTERS.png': 'Mag-LETTERS',
@@ -46,50 +48,42 @@
         'Mag-PROFILE.png': 'Mag-PROFILE'
       };
 
+      var coverSrcPrefix = rootSrc + 'magCovers/';
+
       var filesToLoad = Object
         .keys(iconFilesToPassages)
-        .map(function(src) { return srcPrefix + src; })
-        .concat('gardens.jpg');
+        .map(function(src) { return iconSrcPrefix + src; })
+        .concat(coverSrcPrefix + 'gardens.jpg');
 
-      function init() { //eslint-disable-line no-unused-vars
+      window.initMag = function() { //eslint-disable-line no-unused-vars
         queue = new createjs.LoadQueue();
         queue.installPlugin(createjs.Sound);
-        queue.on("complete", start, this);
+        queue.on("complete", doMag, this);
         queue.loadManifest(filesToLoad);
       }
 
-      function start() { //eslint-disable-line no-unused-vars
+      function doMag() { //eslint-disable-line no-unused-vars
         stage = new createjs.Stage("magcanvas");
         stage.enableMouseOver(10);
         createjs.Touch.enable(stage);
 
         //Draw debug rect
-        var graphics = new createjs.Graphics()
-          .beginFill("rgba(255,0,0,0.5)")
-          .drawRect(0, 0, stage.canvas.width, stage.canvas.height);
-        var shape = new createjs.Shape(graphics);
-        stage.addChild(shape);
-
-        mag = new createjs.Bitmap(queue.getResult('gardens.jpg'));
-        stage.addChild(mag);
-        mag.initX = mag.x = 150;
-        mag.initY = mag.y = 420;
-        mag.scale *= 0.1;
-        mag.rotation = -10;
-        mag.regX = mag.image.width / 2 | 0;
-        mag.regY = mag.image.height / 2 | 0;
-        mag.scaleX = mag.scaleY = mag.scale = 0.3;
-        mag.cursor = "pointer";
-
-        // mag.on("mousedown", function (evt) {
-        //   console.log('doing a thing!' + evt);
-        // });
+        // var graphics = new createjs.Graphics()
+        //   .beginFill("rgba(255,0,0,0.5)")
+        //   .drawRect(0, 0, stage.canvas.width, stage.canvas.height);
+        // var shape = new createjs.Shape(graphics);
+        // stage.addChild(shape);
 
         var srcs = Object.keys(iconFilesToPassages);
         for(var i=0; i<3; i++) {
           (function(){
+            var g = new createjs.Graphics();
+            var bez = new createjs.Shape(g);
+            stage.addChild(bez);
+            beziers.push(g);
+
             var src = extractItem(srcs);
-            var icon = new createjs.Bitmap(queue.getResult(srcPrefix + src));
+            var icon = new createjs.Bitmap(queue.getResult(iconSrcPrefix + src));
             stage.addChild(icon);
             icon.initX = icon.x = i < 2 ? 80 + 130 * i : 150;
             icon.initY = icon.y = i < 2 ? 80 : 200;
@@ -105,26 +99,18 @@
             });
 
             icons.push(icon);
-
-            var g = new createjs.Graphics();
-            var bez = new createjs.Shape(g);
-            stage.addChildAt(bez, 1);
-            beziers.push(g);
           })();
         }
 
-        // target = stage.addChild(new createjs.Shape());
-        // target.graphics.beginFill("red").drawCircle(0,0,45)
-        //   .beginFill("white").drawCircle(0,0,30)
-        //   .beginFill("red").drawCircle(0,0,15);
-        // target.x = 100;
-        // target.y = 180;
-        //
-        // arm = stage.addChild(new createjs.Shape());
-        // arm.graphics.beginFill("black").drawRect(-2,-2,100,4)
-        //   .beginFill("blue").drawCircle(100,0,8);
-        // arm.x = 180;
-        // arm.y = 100;
+        mag = new createjs.Bitmap(queue.getResult(coverSrcPrefix + 'gardens.jpg'));
+        stage.addChild(mag);
+        mag.initX = mag.x = 150;
+        mag.initY = mag.y = 420;
+        mag.scale *= 0.1;
+        mag.rotation = -10;
+        mag.regX = mag.image.width / 2 | 0;
+        mag.regY = mag.image.height / 2 | 0;
+        mag.scaleX = mag.scaleY = mag.scale = 0.3;
 
         createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
         createjs.Ticker.setFPS(60);
@@ -133,9 +119,7 @@
 
       function tick(event) {
         var time = createjs.Ticker.getTime();
-        // var pt;
 
-        // arm.rotation += event.delta/1000*50;
         mag.x = mag.initX + 20 * noise.simplex2(100, time / 18000);
         mag.y = mag.initY + 20 * noise.simplex2(time / 20000, 100);
         mag.rotation = -10 + Math.sin(time / 2900) * 4;
@@ -157,19 +141,13 @@
           );
         }
 
-        // target.alpha = 0.2;
-        // pt = arm.localToLocal(100,0,target);
-        // if (target.hitTest(pt.x, pt.y)) {
-        //   target.alpha = 1;
-        // }
-
         stage.update(event);
       }
     </script>
     <img
       src="data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA="
       style="display: none;"
-      onload="init();">
-    <canvas id="magcanvas" width=300 height=600></canvas>
+      onload="initMag();">
+    <canvas id="magcanvas" width="300" height="600"></canvas>
   </body>
 </html>
