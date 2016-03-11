@@ -27,12 +27,17 @@
       //////////////
       //////////////
 
+      
+      window.articleReadCount = 0;
+      window.articleReadTime = 0;
+
       function extractItem(arr) {
         var i = Math.floor(Math.random()*arr.length);
         return arr.splice(i, 1)[0];
       }
 
-      //badly cribbed from outdated underscore, don't have time to do better now sorry
+      //badly cribbed from outdated underscore, should workkk
+      /*eslint-disable*/
       function debounce(func, wait, immediate) {
         var timeout;
         return function() {
@@ -47,7 +52,7 @@
           if (callNow) func.apply(context, args);
         };
       }
-
+      /*eslint-enable*/
 
       var stage, queue;
       var mag;
@@ -147,10 +152,6 @@
             icon.scaleX = icon.scaleY = icon.scale = 0.3;
             icon.cursor = "pointer";
 
-            icon.on('mouseover', () => {
-              console.log(src);
-            });
-
             icon.on("mousedown", function() {
               icons.forEach(function(ic) {
                 ic.removeAllEventListeners();
@@ -162,8 +163,15 @@
               createjs.Ticker.removeAllEventListeners();
               stage = null;
 
-              console.log('going to ' + src + ' -> ' + iconFilesToPassages[src]);
-              window.harlowe.goToPassage(iconFilesToPassages[src]);
+              if(
+                window.articleReadCount > 10 ||
+                (window.articleReadCount > 3 && window.articleReadTime > 210000)
+              ) {
+                window.harlowe.goToPassage('inside back');
+              }
+              else {
+                window.harlowe.goToPassage(iconFilesToPassages[src]);
+              }
             });
 
             icons.push(icon);
@@ -183,10 +191,14 @@
         createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
         createjs.Ticker.setFPS(60);
         createjs.Ticker.on("tick", tick);
+
+        window.articleReadCount++;
       }
 
       function tick(event) {
         var time = createjs.Ticker.getTime();
+
+        window.articleReadTime += event.delta;
 
         mag.x = mag.initX + 20 * noise.simplex2(100, time / 18000);
         mag.y = mag.initY + 20 * noise.simplex2(time / 20000, 100);
