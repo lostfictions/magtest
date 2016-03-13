@@ -61,6 +61,9 @@
       var icons = [];
       var beziers = [];
 
+      var waitedTime;
+      var MIN_WAIT_TIME = 1000;
+
       var rootSrc = 'http://seerscatalogue.github.io/seers/images/';
 
       var iconSrcPrefix = rootSrc + 'magIcons/';
@@ -105,7 +108,7 @@
         .map(function(src) { return iconSrcPrefix + src; })
         .concat(covers.map(function(c) { return coverSrcPrefix + c; }));
 
-      var debouncedDoMag = debounce(doMag, 1000, true);
+      var debouncedDoMag = debounce(doMag, MIN_WAIT_TIME, true);
 
       window.initMag = function() {
         if(queue == undefined) {
@@ -127,7 +130,8 @@
         }
       };
 
-      function doMag() { //eslint-disable-line no-unused-vars
+      function doMag() {
+        waitedTime = 0;
         stage = new createjs.Stage("magcanvas");
         stage.enableMouseOver(10);
         createjs.Touch.enable(stage);
@@ -161,6 +165,11 @@
             icon.cursor = "pointer";
 
             icon.on("mousedown", function() {
+              //Wait so our debounced func doesn't break the mag
+              if(waitedTime < MIN_WAIT_TIME) {
+                return;
+              }
+
               icons.forEach(function(ic) {
                 ic.removeAllEventListeners();
               });
@@ -206,6 +215,7 @@
       function tick(event) {
         var time = createjs.Ticker.getTime();
 
+        waitedTime += event.delta;
         window.articleReadTime += event.delta;
 
         mag.x = mag.initX + 20 * noise.simplex2(100, time / 18000);
