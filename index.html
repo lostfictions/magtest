@@ -19,6 +19,8 @@
         }
       };
 
+      window.currentTopic = 'keys';
+
       /* eslint no-var:0 vars-on-top:0 */
       /* eslint-env node:false es6:false */
       /* global createjs noise */
@@ -27,7 +29,7 @@
       //////////////
       //////////////
 
-      
+
       window.articleReadCount = 0;
       window.articleReadTime = 0;
 
@@ -91,17 +93,23 @@
 
       var coverSrcPrefix = rootSrc + 'magCovers/';
 
+      var covers = [
+        'gardens.jpg',
+        'keys.jpg',
+        'sport.jpg',
+        'royals.jpg'
+      ];
+
       var filesToLoad = Object
         .keys(iconFilesToPassages)
         .map(function(src) { return iconSrcPrefix + src; })
-        .concat(coverSrcPrefix + 'gardens.jpg');
+        .concat(covers.map(function(c) { return coverSrcPrefix + c; }));
 
       var debouncedDoMag = debounce(doMag, 1000, true);
 
       window.initMag = function() {
         if(queue == undefined) {
           queue = new createjs.LoadQueue();
-          queue.installPlugin(createjs.Sound);
           queue.on("complete", doMag, this);
           queue.loadManifest(filesToLoad);
         }
@@ -178,7 +186,7 @@
           })();
         }
 
-        mag = new createjs.Bitmap(queue.getResult(coverSrcPrefix + 'gardens.jpg'));
+        mag = new createjs.Bitmap(queue.getResult(coverSrcPrefix + window.currentTopic + '.jpg'));
         stage.addChild(mag);
         mag.initX = mag.x = 150;
         mag.initY = mag.y = 420;
